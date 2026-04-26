@@ -1,14 +1,30 @@
 import 'package:flutter/foundation.dart';
 
+/// A single OHLC bar with an optional traded volume.
+///
+/// All prices are doubles in the instrument's quote currency. [time] is a
+/// Unix timestamp **in seconds** (not milliseconds) at the start of the bar.
 @immutable
 class Candle {
+  /// Unix timestamp in **seconds** at the start of the bar.
   final int time;
+
+  /// Opening price.
   final double open;
+
+  /// Highest price reached during the bar.
   final double high;
+
+  /// Lowest price reached during the bar.
   final double low;
+
+  /// Closing price.
   final double close;
+
+  /// Total volume traded during the bar, or `null` if unknown.
   final double? volume;
 
+  /// Creates an immutable OHLC bar.
   const Candle({
     required this.time,
     required this.open,
@@ -18,6 +34,7 @@ class Candle {
     this.volume,
   });
 
+  /// `true` when [close] >= [open] (a bullish, "up" candle).
   bool get isUp => close >= open;
 
   @override

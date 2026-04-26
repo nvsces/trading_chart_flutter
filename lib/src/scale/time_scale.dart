@@ -46,7 +46,11 @@ class TimeScale {
   }
 
   /// Adjust spacing while keeping the bar at [anchorX] under the cursor stable.
-  void zoomAt({required double anchorX, required double factor, required double width}) {
+  void zoomAt({
+    required double anchorX,
+    required double factor,
+    required double width,
+  }) {
     final anchorIndex = xToIndex(anchorX, width);
     final next = (barSpacing * factor).clamp(minBarSpacing, maxBarSpacing);
     if (next == barSpacing) return;

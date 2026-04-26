@@ -30,8 +30,12 @@ class VolumeHistogramSeries {
     final width = size.width;
     final height = size.height;
 
-    final upPaint = ui.Paint()..color = theme.upColor.withValues(alpha: opacity);
-    final downPaint = ui.Paint()..color = theme.downColor.withValues(alpha: opacity);
+    // Use the legacy `withOpacity` rather than `withValues(alpha: ...)` so
+    // the package keeps working on Flutter < 3.27.
+    // ignore: deprecated_member_use
+    final upPaint = ui.Paint()..color = theme.upColor.withOpacity(opacity);
+    // ignore: deprecated_member_use
+    final downPaint = ui.Paint()..color = theme.downColor.withOpacity(opacity);
 
     final range = timeScale.visibleIntegerRange(width);
     final barWidth = (timeScale.barSpacing * 0.7).clamp(1.0, double.infinity);

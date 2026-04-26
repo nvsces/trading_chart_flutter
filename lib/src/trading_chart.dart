@@ -9,7 +9,12 @@ import 'model/candle.dart';
 import 'model/chart_theme.dart';
 import 'render/render_trading_chart.dart';
 
+/// A static candlestick chart widget with no built-in gestures.
+///
+/// Renders [candles] through a single custom render object. Use
+/// [InteractiveTradingChart] if you also want pan, zoom and crosshair.
 class TradingChart extends LeafRenderObjectWidget {
+  /// Creates a static candlestick chart.
   const TradingChart({
     super.key,
     required this.candles,
@@ -21,12 +26,28 @@ class TradingChart extends LeafRenderObjectWidget {
     this.onVisibleRangeChanged,
   });
 
+  /// The full ordered list of bars to render. Times must be ascending.
   final List<Candle> candles;
+
+  /// Colors and font sizes used by the chart.
   final ChartTheme theme;
+
+  /// Pixel width allocated per bar at startup. Adjusted later by zoom.
   final double initialBarSpacing;
+
+  /// Number of empty bar slots reserved at the right edge of the plot.
   final double rightOffsetBars;
+
+  /// Show the translucent volume histogram in the bottom 20 % of the plot.
   final bool showVolume;
+
+  /// Optional imperative controller for live updates and viewport control.
   final ChartController? controller;
+
+  /// Optional callback invoked when the visible logical range changes.
+  ///
+  /// Wire this to load older candles when the user scrolls past the start
+  /// of the data.
   final VisibleRangeChanged? onVisibleRangeChanged;
 
   @override
@@ -78,6 +99,7 @@ enum _GestureZone { plot, priceAxis, timeAxis }
 /// - Double-tap on price axis: re-enable autofit.
 /// - Double-tap on time axis: reset bar spacing + follow latest.
 class InteractiveTradingChart extends StatefulWidget {
+  /// Creates an interactive candlestick chart.
   const InteractiveTradingChart({
     super.key,
     required this.candles,
@@ -89,12 +111,28 @@ class InteractiveTradingChart extends StatefulWidget {
     this.onVisibleRangeChanged,
   });
 
+  /// The full ordered list of bars to render. Times must be ascending.
   final List<Candle> candles;
+
+  /// Colors and font sizes used by the chart.
   final ChartTheme theme;
+
+  /// Pixel width allocated per bar at startup. Adjusted later by zoom.
   final double initialBarSpacing;
+
+  /// Number of empty bar slots reserved at the right edge of the plot.
   final double rightOffsetBars;
+
+  /// Show the translucent volume histogram in the bottom 20 % of the plot.
   final bool showVolume;
+
+  /// Optional imperative controller for live updates and viewport control.
   final ChartController? controller;
+
+  /// Optional callback invoked when the visible logical range changes.
+  ///
+  /// Wire this to load older candles when the user scrolls past the start
+  /// of the data.
   final VisibleRangeChanged? onVisibleRangeChanged;
 
   @override

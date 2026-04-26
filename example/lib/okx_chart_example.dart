@@ -112,14 +112,7 @@ class _OkxChartExampleState extends State<OkxChartExample> {
         continue;
       }
       bars.add(
-        Candle(
-          time: ts ~/ 1000,
-          open: o,
-          high: h,
-          low: l,
-          close: c,
-          volume: v,
-        ),
+        Candle(time: ts ~/ 1000, open: o, high: h, low: l, close: c, volume: v),
       );
     }
     bars.sort((a, b) => a.time.compareTo(b.time));
@@ -277,8 +270,9 @@ class _OkxChartExampleState extends State<OkxChartExample> {
     }
     if (older.isNotEmpty) {
       final knownTimes = <int>{for (final c in _candles) c.time};
-      final filtered =
-          older.where((c) => !knownTimes.contains(c.time)).toList();
+      final filtered = older
+          .where((c) => !knownTimes.contains(c.time))
+          .toList();
       _candles = [...filtered, ..._candles];
       _controller.prependHistory(filtered);
     }
@@ -319,10 +313,7 @@ class _OkxChartExampleState extends State<OkxChartExample> {
                   const SizedBox(width: 6),
                   Text(
                     _wsStatus,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.white70,
-                    ),
+                    style: const TextStyle(fontSize: 13, color: Colors.white70),
                   ),
                   if (_lastPrice != null) ...[
                     const SizedBox(width: 12),

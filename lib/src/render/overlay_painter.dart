@@ -69,8 +69,10 @@ class OverlayPainter {
 
     // Snap vertical line to bar center.
     final snappedX =
-        timeScale.indexToX(dataIndex.toDouble(), plotRect.width).roundToDouble() +
-            0.5;
+        timeScale
+            .indexToX(dataIndex.toDouble(), plotRect.width)
+            .roundToDouble() +
+        0.5;
 
     _drawDashedVLine(
       canvas,

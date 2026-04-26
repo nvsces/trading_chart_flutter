@@ -1,3 +1,13 @@
+/// Pure-Dart candlestick trading chart for Flutter.
+///
+/// See [TradingChart] for a static chart that renders a list of [Candle]s,
+/// or [InteractiveTradingChart] for the same chart with TradingView-style
+/// pan, zoom, crosshair and axis-drag gestures.
+///
+/// Use a [ChartController] to drive updates imperatively (live ticks,
+/// history pagination, programmatic scroll).
+library;
+
 export 'src/chart_controller.dart'
     show ChartController, VisibleLogicalRange, VisibleRangeChanged;
 export 'src/model/candle.dart';

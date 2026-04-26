@@ -21,14 +21,14 @@ class RenderTradingChart extends RenderBox {
     required double initialBarSpacing,
     required double rightOffsetBars,
     required bool showVolume,
-  })  : _candles = candles,
-        _theme = theme,
-        _showVolume = showVolume,
-        _timeScale = TimeScale(
-          dataLength: candles.length,
-          barSpacing: initialBarSpacing,
-          rightOffsetBars: rightOffsetBars,
-        );
+  }) : _candles = candles,
+       _theme = theme,
+       _showVolume = showVolume,
+       _timeScale = TimeScale(
+         dataLength: candles.length,
+         barSpacing: initialBarSpacing,
+         rightOffsetBars: rightOffsetBars,
+       );
 
   // ───────── data ─────────
 
@@ -67,8 +67,10 @@ class RenderTradingChart extends RenderBox {
   final TimeScale _timeScale;
   final PriceScale _priceScale = PriceScale();
   // Volume occupies the bottom 20% of the plot (top margin = 0.8).
-  final PriceScale _volumeScale =
-      PriceScale(topMarginRatio: 0.8, bottomMarginRatio: 0.0);
+  final PriceScale _volumeScale = PriceScale(
+    topMarginRatio: 0.8,
+    bottomMarginRatio: 0.0,
+  );
   TimeScale get timeScale => _timeScale;
 
   bool _isFollowingLatest() {
@@ -238,8 +240,10 @@ class RenderTradingChart extends RenderBox {
 
   // ───────── layout ─────────
 
-  double get _plotWidth => (size.width - AxesPainter.priceAxisWidth).clamp(0.0, double.infinity);
-  double get _plotHeight => (size.height - AxesPainter.timeAxisHeight).clamp(0.0, double.infinity);
+  double get _plotWidth =>
+      (size.width - AxesPainter.priceAxisWidth).clamp(0.0, double.infinity);
+  double get _plotHeight =>
+      (size.height - AxesPainter.timeAxisHeight).clamp(0.0, double.infinity);
 
   @override
   bool get sizedByParent => true;
@@ -247,8 +251,8 @@ class RenderTradingChart extends RenderBox {
   @override
   Size computeDryLayout(BoxConstraints constraints) =>
       constraints.biggest.isFinite
-          ? constraints.biggest
-          : constraints.constrain(const Size(400, 300));
+      ? constraints.biggest
+      : constraints.constrain(const Size(400, 300));
 
   // ───────── paint ─────────
 

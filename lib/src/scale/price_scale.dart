@@ -111,7 +111,11 @@ class PriceAxisTick {
   final double y;
   final String label;
 
-  const PriceAxisTick({required this.price, required this.y, required this.label});
+  const PriceAxisTick({
+    required this.price,
+    required this.y,
+    required this.label,
+  });
 }
 
 /// Picks "nice" round numbers for axis ticks (1, 2, 2.5, 5 × 10^n family).

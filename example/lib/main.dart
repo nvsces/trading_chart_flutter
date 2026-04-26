@@ -50,11 +50,10 @@ class HomePage extends StatelessWidget {
               const SizedBox(height: 12),
               _DemoTile(
                 title: 'OKX live (BTC-USDT)',
-                subtitle: 'REST history + WebSocket trades, real exchange data.',
+                subtitle:
+                    'REST history + WebSocket trades, real exchange data.',
                 onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const OkxChartExample(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const OkxChartExample()),
                 ),
               ),
             ],

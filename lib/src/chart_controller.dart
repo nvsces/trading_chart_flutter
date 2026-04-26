@@ -3,10 +3,20 @@ import 'package:flutter/foundation.dart';
 import 'model/candle.dart';
 import 'render/render_trading_chart.dart';
 
+/// The portion of the time scale currently visible on screen, expressed in
+/// **logical bar indices** (the position of a bar in the data list, possibly
+/// fractional at the edges).
 @immutable
 class VisibleLogicalRange {
+  /// Leftmost visible logical index (may be negative if the user scrolled
+  /// past the start of the data).
   final double from;
+
+  /// Rightmost visible logical index (may be greater than `data.length - 1`
+  /// because of the right offset).
   final double to;
+
+  /// Creates a logical range descriptor.
   const VisibleLogicalRange({required this.from, required this.to});
 
   @override
@@ -20,6 +30,10 @@ class VisibleLogicalRange {
   String toString() => 'VisibleLogicalRange($from..$to)';
 }
 
+/// Callback fired whenever the visible logical range changes.
+///
+/// Wire this to your data source to load older candles when [VisibleLogicalRange.from]
+/// drops below a small threshold (history pagination).
 typedef VisibleRangeChanged = void Function(VisibleLogicalRange range);
 
 /// Imperative API for the chart, in the spirit of Lightweight Charts.
@@ -35,6 +49,9 @@ class ChartController extends ChangeNotifier {
 
   // ───────── attach lifecycle ─────────
 
+  /// Bind the controller to the underlying render object. Called by
+  /// [TradingChart] when the widget is mounted; you should not call this
+  /// directly.
   void attach(RenderTradingChart render) {
     _render = render;
     if (_pendingData != null) {
@@ -43,6 +60,8 @@ class ChartController extends ChangeNotifier {
     }
   }
 
+  /// Release the binding to the render object. Called by [TradingChart]
+  /// when the widget is unmounted; you should not call this directly.
   void detach() {
     _render = null;
   }
@@ -108,8 +127,8 @@ class ChartController extends ChangeNotifier {
     final ts = r.timeScale;
     final wasFollowing =
         (ts.rightLogicalIndex - ((current.length - 1) + ts.rightOffsetBars))
-                .abs() <
-            0.5;
+            .abs() <
+        0.5;
     r.candles = next;
     if (!wasFollowing) {
       ts.rightLogicalIndex += addedCount;
@@ -119,6 +138,8 @@ class ChartController extends ChangeNotifier {
 
   // ───────── viewport ─────────
 
+  /// Pin the right edge of the chart back to the latest bar (with the
+  /// configured right offset). Equivalent to a double-tap in the plot area.
   void scrollToLatest() {
     _render?.scrollToLatest();
   }
