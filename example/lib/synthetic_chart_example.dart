@@ -184,6 +184,23 @@ class _SyntheticChartExampleState extends State<SyntheticChartExample> {
                 lineWidth: 1.5,
               ),
             ],
+            panes: [
+              ChartPane(
+                title: 'RSI(14)',
+                heightRatio: 0.22,
+                lines: [
+                  LineSeries(
+                    data: relativeStrengthIndex(_candles, 14),
+                    color: const Color(0xFFCE93D8),
+                    fitToPriceScale: false,
+                  ),
+                ],
+                levels: const [
+                  PaneLevel(value: 70, colorArgb: 0x80EF5350),
+                  PaneLevel(value: 30, colorArgb: 0x8066BB6A),
+                ],
+              ),
+            ],
           ),
         ),
       ),

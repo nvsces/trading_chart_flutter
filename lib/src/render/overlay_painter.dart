@@ -68,8 +68,7 @@ class OverlayPainter {
       ..style = ui.PaintingStyle.stroke;
 
     // Snap vertical line to bar center.
-    final snappedX =
-        timeScale
+    final snappedX = timeScale
             .indexToX(dataIndex.toDouble(), plotRect.width)
             .roundToDouble() +
         0.5;
@@ -116,6 +115,83 @@ class OverlayPainter {
       canvas: canvas,
       axisRect: timeAxisRect,
       x: snappedX,
+      text: _formatDateTime(dt),
+      bg: theme.crosshairLabelBg,
+      fg: theme.crosshairLabelText,
+      fontSize: theme.axisFontSize,
+    );
+  }
+
+  /// Vertical dashed crosshair line spanning [fromY..toY] at screen [x].
+  /// Used to extend the crosshair through extra panes below the main plot.
+  static void paintCrosshairVertical({
+    required ui.Canvas canvas,
+    required double x,
+    required double fromY,
+    required double toY,
+    required ChartTheme theme,
+  }) {
+    final paint = ui.Paint()
+      ..color = theme.crosshair
+      ..strokeWidth = 1
+      ..style = ui.PaintingStyle.stroke;
+    final snapped = x.roundToDouble() + 0.5;
+    _drawDashedVLine(canvas, snapped, fromY, toY, paint, dash: 4, gap: 4);
+  }
+
+  /// Horizontal dashed crosshair + Y-axis price badge inside an extra pane.
+  static void paintPaneCrosshair({
+    required ui.Canvas canvas,
+    required ui.Rect paneRect,
+    required ui.Rect priceAxisRect,
+    required ChartTheme theme,
+    required double y,
+    required double value,
+    required double valueStep,
+  }) {
+    final paint = ui.Paint()
+      ..color = theme.crosshair
+      ..strokeWidth = 1
+      ..style = ui.PaintingStyle.stroke;
+    final cy = y.clamp(paneRect.top, paneRect.bottom);
+    _drawDashedHLine(
+      canvas,
+      cy.roundToDouble() + 0.5,
+      paneRect.left,
+      paneRect.right,
+      paint,
+      dash: 4,
+      gap: 4,
+    );
+    _drawAxisBadge(
+      canvas: canvas,
+      axisRect: priceAxisRect,
+      y: cy,
+      text: NiceTicks.formatPrice(value, valueStep),
+      bg: theme.crosshairLabelBg,
+      fg: theme.crosshairLabelText,
+      fontSize: theme.axisFontSize,
+    );
+  }
+
+  /// Time badge centered on [x] over [timeAxisRect]. Used when the crosshair
+  /// is hovering an extra pane (so we still show the time, but no main-plot
+  /// price badge).
+  static void paintTimeOnlyBadge({
+    required ui.Canvas canvas,
+    required ui.Rect timeAxisRect,
+    required double x,
+    required int unixSeconds,
+    required ChartTheme theme,
+  }) {
+    final dt = DateTime.fromMillisecondsSinceEpoch(
+      unixSeconds * 1000,
+      isUtc: false,
+    );
+    _drawTimeBadge(
+      canvas: canvas,
+      axisRect: timeAxisRect,
+      x: x.roundToDouble() + 0.5,
       text: _formatDateTime(dt),
       bg: theme.crosshairLabelBg,
       fg: theme.crosshairLabelText,

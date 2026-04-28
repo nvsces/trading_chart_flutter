@@ -5,7 +5,9 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 import 'chart_controller.dart';
+import 'model/bar_marker.dart';
 import 'model/candle.dart';
+import 'model/chart_pane.dart';
 import 'model/chart_theme.dart';
 import 'render/render_trading_chart.dart';
 import 'series/line_series.dart';
@@ -24,6 +26,8 @@ class TradingChart extends LeafRenderObjectWidget {
     this.rightOffsetBars = 8,
     this.showVolume = true,
     this.overlays = const [],
+    this.panes = const [],
+    this.markers = const [],
     this.controller,
     this.onVisibleRangeChanged,
   });
@@ -46,6 +50,12 @@ class TradingChart extends LeafRenderObjectWidget {
   /// Line overlays drawn on top of the candles (e.g. moving averages).
   final List<LineSeries> overlays;
 
+  /// Extra panes stacked under the main plot (e.g. RSI, MACD).
+  final List<ChartPane> panes;
+
+  /// Markers anchored to candles by time (e.g. trade entries, news flags).
+  final List<BarMarker> markers;
+
   /// Optional imperative controller for live updates and viewport control.
   final ChartController? controller;
 
@@ -64,6 +74,8 @@ class TradingChart extends LeafRenderObjectWidget {
       rightOffsetBars: rightOffsetBars,
       showVolume: showVolume,
       overlays: overlays,
+      panes: panes,
+      markers: markers,
     );
     r.onVisibleRangeChanged = onVisibleRangeChanged;
     controller?.attach(r);
@@ -80,6 +92,8 @@ class TradingChart extends LeafRenderObjectWidget {
       ..theme = theme
       ..showVolume = showVolume
       ..overlays = overlays
+      ..panes = panes
+      ..markers = markers
       ..onVisibleRangeChanged = onVisibleRangeChanged;
     if (controller != null) controller!.attach(renderObject);
   }
@@ -115,6 +129,8 @@ class InteractiveTradingChart extends StatefulWidget {
     this.rightOffsetBars = 8,
     this.showVolume = true,
     this.overlays = const [],
+    this.panes = const [],
+    this.markers = const [],
     this.controller,
     this.onVisibleRangeChanged,
   });
@@ -136,6 +152,12 @@ class InteractiveTradingChart extends StatefulWidget {
 
   /// Line overlays drawn on top of the candles (e.g. moving averages).
   final List<LineSeries> overlays;
+
+  /// Extra panes stacked under the main plot (e.g. RSI, MACD).
+  final List<ChartPane> panes;
+
+  /// Markers anchored to candles by time (e.g. trade entries, news flags).
+  final List<BarMarker> markers;
 
   /// Optional imperative controller for live updates and viewport control.
   final ChartController? controller;
@@ -242,8 +264,6 @@ class _InteractiveTradingChartState extends State<InteractiveTradingChart>
     switch (_zone) {
       case _GestureZone.plot:
         if (d.scale != 1.0) {
-          // Pinch zoom X around the original focal point. Set spacing
-          // absolutely against the captured anchor to avoid drift.
           r.setSpacingAtAnchor(
             anchorIndex: _scaleStartAnchorIndex,
             anchorX: _scaleStartFocal.dx,
@@ -254,19 +274,15 @@ class _InteractiveTradingChartState extends State<InteractiveTradingChart>
         }
         break;
       case _GestureZone.priceAxis:
-        // Drag on price axis = manual Y zoom around the start point.
         final dy = d.localFocalPoint.dy - _priceDragStartY;
         if (dy.abs() < 0.5) return;
-        // Drag down = zoom in (factor > 1), drag up = zoom out.
         final factor = math.exp(dy / 200);
         _priceDragStartY = d.localFocalPoint.dy;
         r.priceZoomAt(anchorY: _scaleStartFocal.dy, factor: factor);
         break;
       case _GestureZone.timeAxis:
-        // Drag on time axis = zoom X around right edge.
         final dx = d.localFocalPoint.dx - _timeAxisDragStartX;
         if (dx.abs() < 0.5) return;
-        // Drag left = zoom out, drag right = zoom in (LWC convention).
         final factor = math.exp(dx / 200);
         _timeAxisDragStartX = d.localFocalPoint.dx;
         r.zoomAt(anchorX: r.plotWidth, factor: factor);
@@ -302,7 +318,6 @@ class _InteractiveTradingChartState extends State<InteractiveTradingChart>
     if (dt <= 0) return;
     final dx = _flingVelocityX * dt;
     r.panByPixels(dx);
-    // Exponential decay (~3.5 = stops in ~1s).
     _flingVelocityX *= math.exp(-3.5 * dt);
     if (_flingVelocityX.abs() < 30) {
       _stopFling();
@@ -327,19 +342,11 @@ class _InteractiveTradingChartState extends State<InteractiveTradingChart>
     final dy = e.scrollDelta.dy;
     final dx = e.scrollDelta.dx;
 
-    // Trackpad on Chrome reports pinch as fine-grained scroll events with
-    // tiny deltas (dy ≈ -1..-4 per tick) and ALSO sends two-finger horizontal
-    // scroll the same way (dx component). We handle both:
-    //   - vertical delta → zoom (anchor under pointer), instant (no anim,
-    //     events arrive often enough that animation just fights itself).
-    //   - horizontal delta → pan.
     final isTrackpad = e.kind == PointerDeviceKind.trackpad;
 
     if (isTrackpad) {
       if (dx != 0) r.panByPixels(-dx);
       if (dy != 0) {
-        // Sensitivity tuned for trackpad on Chrome (tiny tick deltas).
-        // Negative dy = pinch out / scroll up → zoom in (factor > 1).
         final factor = math.exp(-dy * 0.005);
         final desired = (r.timeScale.barSpacing * factor).clamp(1.0, 60.0);
         final factorClamped = desired / r.timeScale.barSpacing;
@@ -350,27 +357,18 @@ class _InteractiveTradingChartState extends State<InteractiveTradingChart>
       return;
     }
 
-    // Mouse wheel: deltas are big (~100) and rare (one per detent).
-    // Animate to make discrete steps feel smooth.
     if (dy == 0) return;
     final factor = math.exp(-dy * 0.0035);
     final desired = (r.timeScale.barSpacing * factor).clamp(1.0, 60.0);
     _animateZoomTo(anchor: e.localPosition, newSpacing: desired);
   }
 
-  /// Smoothly tween bar spacing from current value toward [newSpacing],
-  /// continuing any in-flight animation rather than restarting from zero.
-  /// This is what makes consecutive wheel ticks feel fluid.
   void _animateZoomTo({required Offset anchor, required double newSpacing}) {
     final r = _render;
     if (r == null) return;
     _wheelAnchor = anchor;
     _wheelStartSpacing = r.timeScale.barSpacing;
     _wheelTargetSpacing = newSpacing.clamp(1.0, 60.0);
-    // Restart the animation curve from 0 but keep the *start* equal to the
-    // current spacing — so even if a previous tween was mid-flight, the
-    // next animation begins from where we visually are, not from a stale
-    // anchor. The curve is short (140ms) so tweens overlap smoothly.
     _wheelAnim!
       ..stop()
       ..value = 0
@@ -389,10 +387,6 @@ class _InteractiveTradingChartState extends State<InteractiveTradingChart>
   }
 
   // ───────── trackpad pan/zoom (native PanZoom events) ─────────
-  //
-  // Some platforms (native macOS, some Linux setups) deliver trackpad pinch
-  // as PointerPanZoom* events. Chrome on macOS does NOT — it folds them into
-  // PointerScrollEvent with kind=trackpad, which we handle in _onPointerSignal.
 
   Offset _panZoomFocal = Offset.zero;
   double _panZoomStartSpacing = 8;
@@ -522,6 +516,8 @@ class _InteractiveTradingChartState extends State<InteractiveTradingChart>
             rightOffsetBars: widget.rightOffsetBars,
             showVolume: widget.showVolume,
             overlays: widget.overlays,
+            panes: widget.panes,
+            markers: widget.markers,
             controller: widget.controller,
             onVisibleRangeChanged: widget.onVisibleRangeChanged,
           ),
