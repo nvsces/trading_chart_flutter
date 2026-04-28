@@ -4,6 +4,11 @@ Pure-Dart candlestick trading chart for Flutter. Custom `RenderObject` pipeline,
 
 The API is inspired by [Lightweight Charts](https://www.tradingview.com/lightweight-charts/) (data + controller); the gesture model mirrors TradingView (pan, pinch, axis-drag zoom, crosshair, double-tap reset, fling inertia, animated wheel zoom).
 
+<p>
+  <img src="demo1.gif" width="49%" alt="Basic chart demo" />
+  <img src="demo2.gif" width="49%" alt="RSI sub-panel demo" />
+</p>
+
 ## Features
 
 - **Candlestick series** with up/down colors and wicks.
