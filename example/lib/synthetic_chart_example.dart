@@ -173,6 +173,17 @@ class _SyntheticChartExampleState extends State<SyntheticChartExample> {
             controller: _controller,
             onVisibleRangeChanged: _onVisibleRangeChanged,
             theme: ChartTheme.dark,
+            overlays: [
+              LineSeries(
+                data: simpleMovingAverage(_candles, 20),
+                color: const Color(0xFFFFB300),
+              ),
+              LineSeries(
+                data: exponentialMovingAverage(_candles, 50),
+                color: const Color(0xFF42A5F5),
+                lineWidth: 1.5,
+              ),
+            ],
           ),
         ),
       ),

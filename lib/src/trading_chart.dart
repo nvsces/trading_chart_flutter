@@ -8,6 +8,7 @@ import 'chart_controller.dart';
 import 'model/candle.dart';
 import 'model/chart_theme.dart';
 import 'render/render_trading_chart.dart';
+import 'series/line_series.dart';
 
 /// A static candlestick chart widget with no built-in gestures.
 ///
@@ -22,6 +23,7 @@ class TradingChart extends LeafRenderObjectWidget {
     this.initialBarSpacing = 8,
     this.rightOffsetBars = 8,
     this.showVolume = true,
+    this.overlays = const [],
     this.controller,
     this.onVisibleRangeChanged,
   });
@@ -41,6 +43,9 @@ class TradingChart extends LeafRenderObjectWidget {
   /// Show the translucent volume histogram in the bottom 20 % of the plot.
   final bool showVolume;
 
+  /// Line overlays drawn on top of the candles (e.g. moving averages).
+  final List<LineSeries> overlays;
+
   /// Optional imperative controller for live updates and viewport control.
   final ChartController? controller;
 
@@ -58,6 +63,7 @@ class TradingChart extends LeafRenderObjectWidget {
       initialBarSpacing: initialBarSpacing,
       rightOffsetBars: rightOffsetBars,
       showVolume: showVolume,
+      overlays: overlays,
     );
     r.onVisibleRangeChanged = onVisibleRangeChanged;
     controller?.attach(r);
@@ -73,6 +79,7 @@ class TradingChart extends LeafRenderObjectWidget {
       ..candles = candles
       ..theme = theme
       ..showVolume = showVolume
+      ..overlays = overlays
       ..onVisibleRangeChanged = onVisibleRangeChanged;
     if (controller != null) controller!.attach(renderObject);
   }
@@ -107,6 +114,7 @@ class InteractiveTradingChart extends StatefulWidget {
     this.initialBarSpacing = 8,
     this.rightOffsetBars = 8,
     this.showVolume = true,
+    this.overlays = const [],
     this.controller,
     this.onVisibleRangeChanged,
   });
@@ -125,6 +133,9 @@ class InteractiveTradingChart extends StatefulWidget {
 
   /// Show the translucent volume histogram in the bottom 20 % of the plot.
   final bool showVolume;
+
+  /// Line overlays drawn on top of the candles (e.g. moving averages).
+  final List<LineSeries> overlays;
 
   /// Optional imperative controller for live updates and viewport control.
   final ChartController? controller;
@@ -510,6 +521,7 @@ class _InteractiveTradingChartState extends State<InteractiveTradingChart>
             initialBarSpacing: widget.initialBarSpacing,
             rightOffsetBars: widget.rightOffsetBars,
             showVolume: widget.showVolume,
+            overlays: widget.overlays,
             controller: widget.controller,
             onVisibleRangeChanged: widget.onVisibleRangeChanged,
           ),

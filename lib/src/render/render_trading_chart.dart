@@ -9,6 +9,7 @@ import '../scale/time_scale.dart';
 import '../chart_controller.dart';
 import '../series/candlestick_series.dart';
 import '../series/histogram_series.dart';
+import '../series/line_series.dart';
 import 'axes_painter.dart';
 import 'overlay_painter.dart';
 import 'time_axis_ticks.dart';
@@ -21,9 +22,11 @@ class RenderTradingChart extends RenderBox {
     required double initialBarSpacing,
     required double rightOffsetBars,
     required bool showVolume,
+    List<LineSeries> overlays = const [],
   }) : _candles = candles,
        _theme = theme,
        _showVolume = showVolume,
+       _overlays = overlays,
        _timeScale = TimeScale(
          dataLength: candles.length,
          barSpacing: initialBarSpacing,
@@ -59,6 +62,14 @@ class RenderTradingChart extends RenderBox {
   set showVolume(bool v) {
     if (_showVolume == v) return;
     _showVolume = v;
+    markNeedsPaint();
+  }
+
+  List<LineSeries> _overlays;
+  List<LineSeries> get overlays => _overlays;
+  set overlays(List<LineSeries> v) {
+    if (identical(_overlays, v)) return;
+    _overlays = v;
     markNeedsPaint();
   }
 
@@ -290,7 +301,19 @@ class RenderTradingChart extends RenderBox {
       final series = CandlestickSeries(data: _candles);
       final pr = series.priceRange(visible.from, visible.to);
       if (pr != null) {
-        _priceScale.fit(_expand(pr.min, pr.max));
+        var fitMin = pr.min;
+        var fitMax = pr.max;
+        // Expand the auto-fit range so visible overlay values stay on screen.
+        final visFromTime = _candles[visible.from].time;
+        final visToTime = _candles[visible.to].time;
+        for (final ov in _overlays) {
+          if (!ov.fitToPriceScale) continue;
+          final r = ov.valueRangeForTimeWindow(visFromTime, visToTime);
+          if (r == null) continue;
+          if (r.min < fitMin) fitMin = r.min;
+          if (r.max > fitMax) fitMax = r.max;
+        }
+        _priceScale.fit(_expand(fitMin, fitMax));
       }
 
       // Compute axis ticks.
@@ -350,6 +373,18 @@ class RenderTradingChart extends RenderBox {
         priceScale: _priceScale,
         theme: _theme,
       );
+      // Overlay line series (e.g. moving averages) on top of candles.
+      if (_overlays.isNotEmpty) {
+        for (final ov in _overlays) {
+          ov.paint(
+            canvas: canvas,
+            size: ui.Size(_plotWidth, _plotHeight),
+            timeScale: _timeScale,
+            priceScale: _priceScale,
+            xForTime: _xForTime,
+          );
+        }
+      }
       // Last value price line (clipped).
       OverlayPainter.paintLastValue(
         canvas: canvas,
@@ -442,6 +477,45 @@ class RenderTradingChart extends RenderBox {
   Iterable<double> _expand(double min, double max) sync* {
     yield min;
     yield max;
+  }
+
+  /// Map a Unix-seconds [time] to a screen X using the current time scale.
+  /// Times outside the data range are linearly extrapolated using the
+  /// average bar duration, so an overlay sample slightly past the last
+  /// candle still lands at a sensible X.
+  double _xForTime(int time) {
+    final n = _candles.length;
+    if (n == 0) return 0;
+    if (n == 1) return _timeScale.indexToX(0, _plotWidth);
+    final first = _candles[0].time;
+    final last = _candles[n - 1].time;
+    final avgStep = (last - first) / (n - 1);
+    if (time <= first) {
+      final idx = avgStep > 0 ? (time - first) / avgStep : 0.0;
+      return _timeScale.indexToX(idx, _plotWidth);
+    }
+    if (time >= last) {
+      final idx = avgStep > 0
+          ? (n - 1) + (time - last) / avgStep
+          : (n - 1).toDouble();
+      return _timeScale.indexToX(idx, _plotWidth);
+    }
+    // Binary search: find lo such that candles[lo].time <= time < candles[lo+1].time.
+    var lo = 0;
+    var hi = n - 1;
+    while (hi - lo > 1) {
+      final mid = (lo + hi) >> 1;
+      if (_candles[mid].time <= time) {
+        lo = mid;
+      } else {
+        hi = mid;
+      }
+    }
+    final tLo = _candles[lo].time;
+    final tHi = _candles[hi].time;
+    final span = tHi - tLo;
+    final frac = span > 0 ? (time - tLo) / span : 0.0;
+    return _timeScale.indexToX(lo + frac, _plotWidth);
   }
 
   // ───────── hit test ─────────
