@@ -1,6 +1,6 @@
 name: trading_chart_flutter
 description: "Pure-Dart candlestick trading chart widget for Flutter, with custom RenderObject pipeline, Lightweight Charts-style API, and TradingView-like gestures."
-version: 0.0.1
+version: 0.1.0
 homepage: https://github.com/nvsces/trading_chart_flutter
 repository: https://github.com/nvsces/trading_chart_flutter
 issue_tracker: https://github.com/nvsces/trading_chart_flutter/issues

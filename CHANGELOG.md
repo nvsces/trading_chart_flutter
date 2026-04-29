@@ -1,3 +1,14 @@
+## 0.1.0
+
+* Line series overlays for indicators on the main pane.
+* Built-in moving averages: Simple (SMA) and Exponential (EMA).
+* Relative Strength Index (RSI) indicator.
+* Sub-panes (`ChartPane`) for separate indicator panels with auto-fit price
+  scales and reference levels (e.g. RSI 30/70).
+* Bar markers (`BarMarker`) — time-anchored arrows, circles, and squares with
+  optional labels, anchored above/below/in candles.
+* Demo GIFs in README.
+
 ## 0.0.1
 
 * Initial release.
