@@ -81,20 +81,31 @@ class LineSeries {
     final path = ui.Path();
     var penDown = false;
 
-    for (final p in data) {
+    // xForTime is monotonic non-decreasing in time, so we can binary-search
+    // the inclusive index window [lo..hi] whose x lands inside the cull rect
+    // [-width .. 2*width]. We then extend by one on each side so the polyline
+    // segments that cross the edge are still drawn (canvas clip handles the
+    // off-screen tail).
+    final cullMin = -width;
+    final cullMax = 2 * width;
+    final n = data.length;
+    var lo = _firstIndexWithXAtLeast(cullMin, xForTime);
+    var hi = _lastIndexWithXAtMost(cullMax, xForTime);
+    if (lo > hi) {
+      // Whole series is off-screen on one side.
+      return;
+    }
+    if (lo > 0) lo -= 1;
+    if (hi < n - 1) hi += 1;
+
+    for (var i = lo; i <= hi; i++) {
+      final p = data[i];
       final v = p.value;
       if (v.isNaN || v.isInfinite) {
         penDown = false;
         continue;
       }
       final x = xForTime(p.time);
-      // Cull points clearly outside the viewport horizontally, but keep the
-      // segments that cross the edge — moveTo/lineTo handle clipping with the
-      // canvas clip rect set up by the caller.
-      if (x < -width || x > width * 2) {
-        penDown = false;
-        continue;
-      }
       final y = priceScale.priceToY(v, height);
       if (!penDown) {
         path.moveTo(x, y);
@@ -105,5 +116,37 @@ class LineSeries {
     }
 
     canvas.drawPath(path, paint);
+  }
+
+  /// Smallest `i` in `[0..n]` such that `xForTime(data[i].time) >= target`.
+  /// Returns `n` if no such index exists.
+  int _firstIndexWithXAtLeast(double target, double Function(int time) xForTime) {
+    var lo = 0;
+    var hi = data.length;
+    while (lo < hi) {
+      final mid = (lo + hi) >> 1;
+      if (xForTime(data[mid].time) < target) {
+        lo = mid + 1;
+      } else {
+        hi = mid;
+      }
+    }
+    return lo;
+  }
+
+  /// Largest `i` in `[-1..n-1]` such that `xForTime(data[i].time) <= target`.
+  /// Returns `-1` if no such index exists.
+  int _lastIndexWithXAtMost(double target, double Function(int time) xForTime) {
+    var lo = 0;
+    var hi = data.length;
+    while (lo < hi) {
+      final mid = (lo + hi) >> 1;
+      if (xForTime(data[mid].time) <= target) {
+        lo = mid + 1;
+      } else {
+        hi = mid;
+      }
+    }
+    return lo - 1;
   }
 }
