@@ -4,6 +4,34 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:trading_chart_flutter/trading_chart_flutter.dart';
 
+/// Deterministic synthetic series with a large dynamic range (price grows
+/// roughly 100x across the window, with noise). Useful for visualising a
+/// log-scale chart, where equal % moves take equal screen distance.
+List<Candle> _exponentialSeries({int n = 200, int seed = 11}) {
+  final rng = math.Random(seed);
+  final out = <Candle>[];
+  var price = 1.0;
+  const startTime = 1700000000;
+  // ~+2.3% drift per bar with ±2% jitter → price grows ~100x across 200 bars.
+  for (var i = 0; i < n; i++) {
+    final pct = 0.023 + (rng.nextDouble() - 0.5) * 0.04;
+    final open = price;
+    final close = price * (1 + pct);
+    final high = math.max(open, close) * (1 + rng.nextDouble() * 0.01);
+    final low = math.min(open, close) * (1 - rng.nextDouble() * 0.01);
+    out.add(Candle(
+      time: startTime + i * 60,
+      open: open,
+      high: high,
+      low: low,
+      close: close,
+      volume: 50 + rng.nextDouble() * 100,
+    ));
+    price = close;
+  }
+  return out;
+}
+
 /// Deterministic synthetic candle series. The same seed always yields the
 /// same data, so goldens are stable across machines.
 List<Candle> _series({int n = 120, int seed = 1}) {
@@ -161,6 +189,32 @@ void main() {
         ],
       ),
       'chart_with_bollinger.png',
+    );
+  });
+
+  testWidgets('linear vs logarithmic price scale on the same data',
+      (tester) async {
+    final candles = _exponentialSeries();
+    // Linear baseline.
+    await _pumpAndMatch(
+      tester,
+      TradingChart(
+        candles: candles,
+        theme: ChartTheme.dark,
+        showVolume: false,
+      ),
+      'chart_exponential_linear.png',
+    );
+    // Same data, log scale.
+    await _pumpAndMatch(
+      tester,
+      TradingChart(
+        candles: candles,
+        theme: ChartTheme.dark,
+        showVolume: false,
+        logarithmicPriceScale: true,
+      ),
+      'chart_exponential_log.png',
     );
   });
 

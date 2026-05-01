@@ -28,6 +28,7 @@ class RenderTradingChart extends RenderBox {
     List<LineSeries> overlays = const [],
     List<ChartPane> panes = const [],
     List<BarMarker> markers = const [],
+    bool logarithmicPriceScale = false,
   })  : _candles = candles,
         _theme = theme,
         _showVolume = showVolume,
@@ -39,7 +40,9 @@ class RenderTradingChart extends RenderBox {
           dataLength: candles.length,
           barSpacing: initialBarSpacing,
           rightOffsetBars: rightOffsetBars,
-        );
+        ) {
+    _priceScale.logarithmic = logarithmicPriceScale;
+  }
 
   // ───────── data ─────────
 
@@ -112,6 +115,13 @@ class RenderTradingChart extends RenderBox {
     bottomMarginRatio: 0.0,
   );
   TimeScale get timeScale => _timeScale;
+
+  bool get logarithmicPriceScale => _priceScale.logarithmic;
+  set logarithmicPriceScale(bool v) {
+    if (_priceScale.logarithmic == v) return;
+    _priceScale.logarithmic = v;
+    markNeedsPaint();
+  }
 
   bool _isFollowingLatest() {
     if (_candles.isEmpty) return true;

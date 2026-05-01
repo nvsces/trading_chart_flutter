@@ -30,6 +30,7 @@ class TradingChart extends LeafRenderObjectWidget {
     this.markers = const [],
     this.controller,
     this.onVisibleRangeChanged,
+    this.logarithmicPriceScale = false,
   });
 
   /// The full ordered list of bars to render. Times must be ascending.
@@ -65,6 +66,11 @@ class TradingChart extends LeafRenderObjectWidget {
   /// of the data.
   final VisibleRangeChanged? onVisibleRangeChanged;
 
+  /// When true, the main price scale interpolates in log-space, so equal
+  /// percentage moves take equal screen distance. Falls back to linear when
+  /// the visible minimum is non-positive.
+  final bool logarithmicPriceScale;
+
   @override
   RenderTradingChart createRenderObject(BuildContext context) {
     final r = RenderTradingChart(
@@ -76,6 +82,7 @@ class TradingChart extends LeafRenderObjectWidget {
       overlays: overlays,
       panes: panes,
       markers: markers,
+      logarithmicPriceScale: logarithmicPriceScale,
     );
     r.onVisibleRangeChanged = onVisibleRangeChanged;
     controller?.attach(r);
@@ -94,6 +101,7 @@ class TradingChart extends LeafRenderObjectWidget {
       ..overlays = overlays
       ..panes = panes
       ..markers = markers
+      ..logarithmicPriceScale = logarithmicPriceScale
       ..onVisibleRangeChanged = onVisibleRangeChanged;
     if (controller != null) controller!.attach(renderObject);
   }
@@ -133,6 +141,7 @@ class InteractiveTradingChart extends StatefulWidget {
     this.markers = const [],
     this.controller,
     this.onVisibleRangeChanged,
+    this.logarithmicPriceScale = false,
   });
 
   /// The full ordered list of bars to render. Times must be ascending.
@@ -167,6 +176,11 @@ class InteractiveTradingChart extends StatefulWidget {
   /// Wire this to load older candles when the user scrolls past the start
   /// of the data.
   final VisibleRangeChanged? onVisibleRangeChanged;
+
+  /// When true, the main price scale interpolates in log-space, so equal
+  /// percentage moves take equal screen distance. Falls back to linear when
+  /// the visible minimum is non-positive.
+  final bool logarithmicPriceScale;
 
   @override
   State<InteractiveTradingChart> createState() =>
@@ -520,6 +534,7 @@ class _InteractiveTradingChartState extends State<InteractiveTradingChart>
             markers: widget.markers,
             controller: widget.controller,
             onVisibleRangeChanged: widget.onVisibleRangeChanged,
+            logarithmicPriceScale: widget.logarithmicPriceScale,
           ),
         ),
       ),

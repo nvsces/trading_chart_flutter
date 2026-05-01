@@ -4,11 +4,20 @@ import 'package:flutter/foundation.dart';
 
 /// Maps a price <-> screen Y coordinate inside a vertical region.
 class PriceScale {
-  PriceScale({this.topMarginRatio = 0.05, this.bottomMarginRatio = 0.2});
+  PriceScale({
+    this.topMarginRatio = 0.05,
+    this.bottomMarginRatio = 0.2,
+    this.logarithmic = false,
+  });
 
   /// Padding inside the price region (fraction of region height).
   double topMarginRatio;
   double bottomMarginRatio;
+
+  /// When true, [priceToY] / [yToPrice] interpolate in log-space, so equal
+  /// percentage moves take equal screen distance. Falls back to linear if the
+  /// current minimum is non-positive (log is undefined at and below 0).
+  bool logarithmic;
 
   double _minPrice = 0;
   double _maxPrice = 1;
@@ -16,6 +25,9 @@ class PriceScale {
   /// When true, [fit] is a no-op — user controls the range manually.
   /// Set by user dragging the price axis.
   bool autoFit = true;
+
+  /// Whether the current min/max is safe for logarithmic mapping.
+  bool get _logActive => logarithmic && _minPrice > 0 && _maxPrice > _minPrice;
 
   void switchToManual() {
     autoFit = false;
@@ -71,7 +83,14 @@ class PriceScale {
     final top = height * topMarginRatio;
     final bottom = height * (1 - bottomMarginRatio);
     final usable = bottom - top;
-    final t = (price - _minPrice) / priceRange;
+    final double t;
+    if (_logActive && price > 0) {
+      final logMin = math.log(_minPrice);
+      final logMax = math.log(_maxPrice);
+      t = (math.log(price) - logMin) / (logMax - logMin);
+    } else {
+      t = (price - _minPrice) / priceRange;
+    }
     return bottom - t * usable;
   }
 
@@ -80,25 +99,46 @@ class PriceScale {
     final bottom = height * (1 - bottomMarginRatio);
     final usable = bottom - top;
     final t = (bottom - y) / usable;
+    if (_logActive) {
+      final logMin = math.log(_minPrice);
+      final logMax = math.log(_maxPrice);
+      return math.exp(logMin + t * (logMax - logMin));
+    }
     return _minPrice + t * priceRange;
   }
 
   /// Multiply the price range around the price at [anchorY], keeping that
   /// price fixed at the same screen Y. Used for manual price zoom.
+  ///
+  /// In log mode, the *log-space* range is multiplied by `1/factor`, so the
+  /// pinch feels the same on a log chart as it does on a linear one.
   void zoomAtY({
     required double anchorY,
     required double factor,
     required double height,
   }) {
     final anchorPrice = yToPrice(anchorY, height);
-    final newRange = priceRange / factor;
-    if (newRange <= 0) return;
-    // Solve for new min so that anchorPrice maps back to anchorY.
     final top = height * topMarginRatio;
     final bottom = height * (1 - bottomMarginRatio);
     final usable = bottom - top;
     if (usable <= 0) return;
     final tAnchor = (bottom - anchorY) / usable;
+
+    if (_logActive && anchorPrice > 0) {
+      final logMin = math.log(_minPrice);
+      final logMax = math.log(_maxPrice);
+      final logRange = logMax - logMin;
+      final newLogRange = logRange / factor;
+      if (newLogRange <= 0) return;
+      final logAnchor = math.log(anchorPrice);
+      final newLogMin = logAnchor - tAnchor * newLogRange;
+      _minPrice = math.exp(newLogMin);
+      _maxPrice = math.exp(newLogMin + newLogRange);
+      return;
+    }
+
+    final newRange = priceRange / factor;
+    if (newRange <= 0) return;
     final newMin = anchorPrice - tAnchor * newRange;
     _minPrice = newMin;
     _maxPrice = newMin + newRange;

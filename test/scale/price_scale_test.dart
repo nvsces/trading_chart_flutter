@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:trading_chart_flutter/src/scale/price_scale.dart';
 
@@ -78,6 +80,70 @@ void main() {
       expect(ps.priceToY(100, height), closeTo(100, 1e-9));
       // minPrice should land at bottom margin boundary (y = 800), not y = 1000.
       expect(ps.priceToY(0, height), closeTo(800, 1e-9));
+    });
+  });
+
+  group('logarithmic mode', () {
+    test('priceToY / yToPrice round-trip in log space', () {
+      final ps = PriceScale(logarithmic: true);
+      ps.fit([1.0, 1000.0]);
+      const height = 400.0;
+      for (final p in const [1.0, 3.0, 10.0, 100.0, 316.0, 1000.0]) {
+        final y = ps.priceToY(p, height);
+        expect(ps.yToPrice(y, height), closeTo(p, 1e-6));
+      }
+    });
+
+    test('equal log-ratios map to equal screen distances', () {
+      // Going from 1 to 10 and from 10 to 100 are both x10. In log mode the
+      // two screen distances must be equal; in linear mode they would not.
+      final ps = PriceScale(logarithmic: true);
+      ps.fit([1.0, 1000.0]);
+      const height = 400.0;
+      final y1 = ps.priceToY(1, height);
+      final y10 = ps.priceToY(10, height);
+      final y100 = ps.priceToY(100, height);
+      final dA = (y1 - y10).abs();
+      final dB = (y10 - y100).abs();
+      expect(dA, closeTo(dB, 1e-6));
+    });
+
+    test('falls back to linear when minPrice <= 0', () {
+      final psLog = PriceScale(logarithmic: true);
+      psLog.fit([0.0, 100.0]);
+      final psLin = PriceScale();
+      psLin.fit([0.0, 100.0]);
+      const height = 400.0;
+      // Both modes should produce identical Y for the same prices when log
+      // is forced off by the non-positive minimum.
+      for (final p in const [10.0, 50.0, 90.0]) {
+        expect(
+          psLog.priceToY(p, height),
+          closeTo(psLin.priceToY(p, height), 1e-9),
+        );
+      }
+    });
+
+    test('zoomAtY in log mode keeps anchor price stable', () {
+      final ps = PriceScale(logarithmic: true);
+      ps.fit([1.0, 1000.0]);
+      const height = 400.0;
+      const anchorY = 150.0;
+      final priceBefore = ps.yToPrice(anchorY, height);
+      ps.zoomAtY(anchorY: anchorY, factor: 1.5, height: height);
+      final priceAfter = ps.yToPrice(anchorY, height);
+      expect(priceAfter, closeTo(priceBefore, 1e-9));
+    });
+
+    test('zoomAtY factor>1 shrinks the visible log range', () {
+      final ps = PriceScale(logarithmic: true);
+      ps.fit([1.0, 1000.0]);
+      // Use a custom log of 10 here so the test is human-readable.
+      double log10(double v) => math.log(v) / math.ln10;
+      final logRangeBefore = log10(ps.maxPrice) - log10(ps.minPrice);
+      ps.zoomAtY(anchorY: 200, factor: 2, height: 400);
+      final logRangeAfter = log10(ps.maxPrice) - log10(ps.minPrice);
+      expect(logRangeAfter, closeTo(logRangeBefore / 2, 1e-9));
     });
   });
 
