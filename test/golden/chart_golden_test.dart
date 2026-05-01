@@ -132,6 +132,38 @@ void main() {
     );
   });
 
+  testWidgets('dark theme with Bollinger Bands overlay', (tester) async {
+    final candles = _series(seed: 6, n: 200);
+    final bb = bollingerBands(candles, period: 20, stdDevMultiplier: 2);
+    await _pumpAndMatch(
+      tester,
+      TradingChart(
+        candles: candles,
+        theme: ChartTheme.dark,
+        overlays: [
+          LineSeries(
+            data: bb.middle,
+            color: const Color(0xFFFFD24A),
+            lineWidth: 1.5,
+          ),
+          LineSeries(
+            data: bb.upper,
+            color: const Color(0xFF80CBC4),
+            lineWidth: 1.2,
+            fitToPriceScale: false,
+          ),
+          LineSeries(
+            data: bb.lower,
+            color: const Color(0xFF80CBC4),
+            lineWidth: 1.2,
+            fitToPriceScale: false,
+          ),
+        ],
+      ),
+      'chart_with_bollinger.png',
+    );
+  });
+
   testWidgets('dark theme with RSI pane', (tester) async {
     final candles = _series(seed: 5);
     await _pumpAndMatch(

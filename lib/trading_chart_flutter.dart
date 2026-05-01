@@ -10,6 +10,8 @@ library;
 
 export 'src/chart_controller.dart'
     show ChartController, VisibleLogicalRange, VisibleRangeChanged;
+export 'src/indicators/bollinger_bands.dart'
+    show BollingerBands, bollingerBands;
 export 'src/indicators/moving_average.dart'
     show simpleMovingAverage, exponentialMovingAverage;
 export 'src/indicators/rsi.dart' show relativeStrengthIndex;

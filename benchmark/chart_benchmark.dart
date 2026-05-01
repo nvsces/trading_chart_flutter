@@ -17,6 +17,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:trading_chart_flutter/src/scale/price_scale.dart';
 import 'package:trading_chart_flutter/src/scale/time_scale.dart';
 import 'package:trading_chart_flutter/src/series/candlestick_series.dart';
+import 'package:trading_chart_flutter/src/series/histogram_series.dart';
 import 'package:trading_chart_flutter/trading_chart_flutter.dart';
 
 const _width = 1200.0;
@@ -126,6 +127,37 @@ void _benchCandlestickPaint({
     '$label  N=$dataLength  visible≈$visCount',
     result,
   );
+}
+
+void _benchHistogramPaint({
+  required String label,
+  required int dataLength,
+  required double barSpacing,
+}) {
+  final candles = _series(dataLength);
+  final series = VolumeHistogramSeries(data: candles);
+  final ts = TimeScale(
+    dataLength: dataLength,
+    barSpacing: barSpacing,
+    rightOffsetBars: 0,
+  )..resetToLatest();
+  final ps = PriceScale(topMarginRatio: 0.8, bottomMarginRatio: 0.0)
+    ..fit(candles.map((c) => c.volume ?? 0));
+  final visible = ts.visibleIntegerRange(_width);
+  final visCount = visible.to - visible.from + 1;
+
+  final result = _measure(() {
+    final c = _newCanvas();
+    series.paint(
+      canvas: c.canvas,
+      size: _plotSize,
+      timeScale: ts,
+      priceScale: ps,
+      theme: ChartTheme.dark,
+    );
+    c.recorder.endRecording().dispose();
+  });
+  _printRow('$label  N=$dataLength  visible≈$visCount', result);
 }
 
 void _benchLineOverlayPaint({
@@ -241,6 +273,24 @@ void main() {
       label: 'paint candles (all visible)',
       dataLength: 100000,
       barSpacing: math.max(1, _width / 100000),
+    );
+
+    print('');
+    print('--- VolumeHistogramSeries.paint, fixed visible window ---');
+    _benchHistogramPaint(
+      label: 'paint volume (window=150)',
+      dataLength: 1000,
+      barSpacing: 8,
+    );
+    _benchHistogramPaint(
+      label: 'paint volume (window=150)',
+      dataLength: 10000,
+      barSpacing: 8,
+    );
+    _benchHistogramPaint(
+      label: 'paint volume (window=150)',
+      dataLength: 100000,
+      barSpacing: 8,
     );
 
     print('');
