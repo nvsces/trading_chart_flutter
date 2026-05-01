@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'log_scale_example.dart';
 import 'okx_chart_example.dart';
 import 'synthetic_chart_example.dart';
 
@@ -54,6 +55,15 @@ class HomePage extends StatelessWidget {
                     'REST history + WebSocket trades, real exchange data.',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const OkxChartExample()),
+                ),
+              ),
+              const SizedBox(height: 12),
+              _DemoTile(
+                title: 'Log scale (long-term)',
+                subtitle:
+                    'Exponential synthetic series with a linear/log toggle.',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const LogScaleExample()),
                 ),
               ),
             ],
